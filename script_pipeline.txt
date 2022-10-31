@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    tools {
+        maven "M3"
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                git credentialsId: '72c30c07-510c-4227-8f58-f5697c172f09', url: 'https://github.com/anhltIT/deyloywar.git'
+
+                sh "mvn -Dmaven.test.failure.ignore=true clean package"
+            }
+        }
+        stage('lam viec server tomcat') {
+            steps {
+                  script {
+             def remote = [:]
+             remote.name = 'ansible'
+             remote.host = '192.168.1.205'
+             remote.user = 'root'
+             remote.port = 22
+             remote.password = '123'
+             remote.allowAnyHosts = true
+             sshCommand remote: remote, command: "rm -rf /opt/tomcat/webapps/webdemo-1.0-SNAPSHOT"
+             sshCommand remote: remote, command: "rm -rf /opt/tomcat/webapps/webdemo-1.0-SNAPSHOT.war"
+            }
+        }
+    }
+        stage('ansible lam viec not') {
+            steps {
+               script {
+                 def remote = [:]
+                 remote.name = 'ansible'
+                 remote.host = '192.168.1.202'
+                 remote.user = 'root'
+                 remote.port = 22
+                 remote.password = '123'
+                 remote.allowAnyHosts = true
+                 sshCommand remote: remote, command: "cd /mnt && rm -rf *.war"
+                 sshCommand remote: remote, command: "./copyfile2.sh"
+                 sshCommand remote: remote, command: "ansible-playbook /etc/ansible/chuyenfile.yml"
+               }
+            }
+         }
+    }
+}

@@ -1,0 +1,73 @@
+cài java
+yum install java-1.8.0-openjdk-devel
+
+// tạo tài khoản tomcat
+useradd -m -d /opt/tomcat -U -s /bin/false tomcat 
+
+cd /tmp
+wget https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.56/bin/apache-tomcat-9.0.56.tar.gz --no-check-certificate
+tar xzvf apache-tomcat-9*tar.gz -C /opt/tomcat --strip-components=1
+
+
+// phân quyền
+chown -R tomcat:tomcat /opt/tomcat
+sh -c 'chmod +x /opt/tomcat/bin/*.sh'
+
+//xem link java
+readlink -f $(which java)
+
+tạo service tomcat
+vi /etc/systemd/system/tomcat.service
+
+[Unit]
+Description=Apache Tomcat Web Application Container
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+
+User=tomcat
+Group=tomcat
+
+Environment="JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.352.b08-2.el7_9.x86_64/" ( đường dẫn này ở xem link java bên trên)
+Environment="JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+Environment="CATALINA_BASE=/opt/tomcat"
+Environment="CATALINA_HOME=/opt/tomcat"
+Environment="CATALINA_PID=/opt/tomcat/temp/tomcat.pid"
+Environment="CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC"
+ExecStart=/opt/tomcat/bin/startup.sh
+ExecStop=/opt/tomcat/bin/shutdown.sh
+
+[Install]
+WantedBy=multi-user.target
+
+
+//add port tường lửa ( nếu tắt rồi thi không cần add )
+firewall-cmd --zone=public --permanent --add-port=8080/tcp
+firewall-cmd --reload
+
+
+
+
+// reload lại hệ thống 
+systemctl daemon-reload
+systemctl enable tomcat
+systemctl start tomcat
+systemctl status tomcat
+
+//xóa value để truy cập manager
+vi /opt/tomcat/webapps/host-manager/META-INF/context.xml
+
+
+
+
+// cấu hình user
+<tomcat-users>
+<!--
+Comments
+-->
+<role rolename="admin-gui"/>
+<role rolename="manager-gui"/>
+<user username="admin" password="theanh96" roles="admin-gui,manager-gui"/>
+</tomcat-users>
